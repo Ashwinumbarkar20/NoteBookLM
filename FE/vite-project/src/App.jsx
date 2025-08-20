@@ -1,4 +1,4 @@
-import { useState } from "react";
+
 
 import "./App.css";
 import Rag from "./Component/Rag";
@@ -15,7 +15,7 @@ function App() {
         gap: "20px",
       }}
     >
-      <h3>Document Chat with GenAI (RAG Demo)</h3>
+      <h3 style={{textAlign:"center",margin:"10px"}}>Document Chat with GenAI (RAG Demo)</h3>
 
       <Rag />
     </div>

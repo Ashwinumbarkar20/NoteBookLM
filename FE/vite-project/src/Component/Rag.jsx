@@ -177,7 +177,7 @@ export default function Rag() {
           </label>
 
           <div className="chat-section">
-            <h3>User Chat with RAG</h3>
+            <h3>Interacting with {selectedFile.split(".pdf")}</h3>
             <div className="chat-messages">
               {chatMessages.map((message, index) => (
                 <div key={index} className={`message ${message.sender}`}>

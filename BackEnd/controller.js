@@ -51,14 +51,16 @@ export const processText = async (req, res) => {
       await qdrant.upsert(collectionName, {
         points: [
           {
-            id: uuidv4(), // Use proper UUID instead of random string
+            id: uuidv4(),
             vector,
-            payload: d.metadata,
+            payload: {
+              text: d.pageContent,       // 👈 store actual chunk text
+              ...d.metadata,             // 👈 keep existing metadata too
+            },
           },
         ],
       });
     }
-
     res
       .status(200)
       .json({ message: "Document stored in Qdrant", chunks: docs.length });
