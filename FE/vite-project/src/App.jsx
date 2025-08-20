@@ -15,7 +15,7 @@ function App() {
         gap: "20px",
       }}
     >
-      
+      <h3>Document Chat with GenAI (RAG Demo)</h3>
 
       <Rag />
     </div>

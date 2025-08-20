@@ -115,7 +115,7 @@ export default function Rag() {
 
   return (
     <div className="rag-container">
-      <h1 style={{ textAlign: "center" }}>RAG – Upload only PDF files</h1>
+     
 
       <div className="main-content">
         {/* Left Column */}
