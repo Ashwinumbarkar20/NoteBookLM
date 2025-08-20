@@ -14,7 +14,7 @@ export default function Rag() {
 
   const handleSubmit = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/textInput", {
+      const res = await fetch("https://notebooklm-642n.onrender.com/api/textInput", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -45,7 +45,7 @@ export default function Rag() {
         formData.append("filename", file.name);   
       
       }
-      const res = await fetch("http://localhost:5000/api/pdfInput", {
+      const res = await fetch("https://notebooklm-642n.onrender.com/api/pdfInput", {
         method: "POST",
         body: formData,
       });
@@ -70,7 +70,7 @@ export default function Rag() {
 
   const getFileName=async ()=>{
 try{
-const res=await fetch('http://localhost:5000/api/collections')
+const res=await fetch('https://notebooklm-642n.onrender.com/api/collections')
 const data=await res.json()
 console.log("collections ",data)
 setAllFiles(data.collections)
@@ -89,7 +89,7 @@ console.log("unbale to get files name ",e)
     setChatMessages((prev) => [...prev, newMessage]);
   
     try {
-      const res = await fetch("http://localhost:5000/api/ask", {
+      const res = await fetch("https://notebooklm-642n.onrender.com/api/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
