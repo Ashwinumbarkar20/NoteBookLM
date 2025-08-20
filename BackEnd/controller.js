@@ -178,8 +178,8 @@ export const askRoutes = async (req, res) => {
 
     // 4️⃣ Ask OpenAI
     const prompt = `
-    You are an assistant. Use only the following content to answer the user.
-Always provide references (file name, page, paragraph) from the chunks used.
+    You are an AI assistant. Use only the following content to answer the user about the document.
+
 
     ${context}
 
