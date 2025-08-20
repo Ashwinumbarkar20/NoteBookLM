@@ -163,12 +163,23 @@ export const askRoutes = async (req, res) => {
 
     // 3️⃣ Prepare context
     const context = searchResult
-      .map((item, i) => `Chunk ${i + 1}: ${item.payload.text}`)
-      .join("\n");
+    .map((item, i) => {
+      const { text, pageNumber, paragraph, fileName } = item.payload;
+  
+      return `
+      Chunk ${i + 1}:
+      File: ${fileName || "Unknown"}
+      Page: ${pageNumber || "N/A"}
+      Paragraph: ${paragraph || "N/A"}
+      Content: ${text}
+      `;
+    })
+    .join("\n\n");
 
     // 4️⃣ Ask OpenAI
     const prompt = `
-    You are an assistant. Answer the user based only on the following PDF content:
+    You are an assistant. Use only the following content to answer the user.
+Always provide references (file name, page, paragraph) from the chunks used.
 
     ${context}
 
@@ -189,8 +200,6 @@ export const askRoutes = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-
-
 
 export const listCollections = async (req, res) => {
   try {
