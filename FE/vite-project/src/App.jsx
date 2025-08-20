@@ -15,7 +15,7 @@ function App() {
         gap: "20px",
       }}
     >
-      <h2 style={{ textAlign: "center" }}>HR Policy Bot</h2>
+      
 
       <Rag />
     </div>

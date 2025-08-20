@@ -120,13 +120,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-direction: column;
+  gap: 10px;
   color: #666;
   font-style: italic;
+  height: 500px;
+  overflow-y: auto;
 }
 
 /* Right Column */
 .right-column {
-  width: 350px;
+  width: 60%;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -191,7 +195,7 @@
 }
 
 .chat-messages {
-  flex: 1;
+ height: 440px;
   overflow-y: auto;
   margin-bottom: 20px;
   padding: 10px;
@@ -257,6 +261,7 @@
   .left-column,
   .right-column {
     width: 100%;
+    
   }
   
   .middle-column {

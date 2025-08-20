@@ -1,10 +1,16 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./Rag.css";
 
 export default function Rag() {
   const [textInput, setTextInput] = useState("");
   const [chatInput, setChatInput] = useState("");
   const [chatMessages, setChatMessages] = useState([]);
+  const [Allfiles,setAllFiles]=useState([])
+  const [selectedFile,setSelectedFile]=useState(null)
+  const [isuploading,setIsUploading]=useState(false)
+  const [ragChunks, setRagChunks] = useState([]);
+  
+  const formData = new FormData();
 
   const handleSubmit = async () => {
     try {
@@ -29,71 +35,166 @@ export default function Rag() {
     // Handle text submission logic here
   };
 
-  const handleFileUpload = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      console.log("PDF uploaded:", file.name);
-      // Handle PDF upload logic here
+  const handleFileUpload = async(event) => {
+    try{
+      setIsUploading(true)
+      const file = event.target.files[0];
+      
+      if (file) {
+        formData.append("file", file);
+        formData.append("filename", file.name);   
+      
+      }
+      const res = await fetch("http://localhost:5000/api/pdfInput", {
+        method: "POST",
+        body: formData,
+      });
+  if(res.status===200)
+  {
+    const data = await res.json();
+      console.log(data);
+      alert("file has been upload ")
+  
+  }
     }
+    catch(e){
+      console.log("Error in Uploading",e)
+    }
+   
+  finally{
+    setIsUploading(false)
+  }
   };
 
-  const handleChatSubmit = () => {
-    if (chatInput.trim()) {
-      setChatMessages([...chatMessages, { text: chatInput, sender: "user" }]);
-      setChatInput("");
-      // Handle chat submission logic here
+ 
+
+  const getFileName=async ()=>{
+try{
+const res=await fetch('http://localhost:5000/api/collections')
+const data=await res.json()
+console.log("collections ",data)
+setAllFiles(data.collections)
+}
+catch(e){
+console.log("unbale to get files name ",e)
+}
+  }
+
+  const handleChatSubmit = async () => {
+    if (!chatInput.trim() || !selectedFile) return;
+  
+    // Show user’s message in UI
+    setRagChunks([])
+    const newMessage = { sender: "user", text: chatInput };
+    setChatMessages((prev) => [...prev, newMessage]);
+  
+    try {
+      const res = await fetch("http://localhost:5000/api/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query: chatInput,
+          filename: selectedFile,
+        }),
+      });
+  
+      const data = await res.json();
+  console.log("chunks",data.chunks)
+      // Show retrieved chunks
+      setRagChunks(data.chunks || []);
+  
+      // Show bot’s reply
+      const botMessage = { sender: "bot", text: data.answer };
+      setChatMessages((prev) => [...prev, botMessage]);
+    } catch (error) {
+      console.error("Chat error:", error);
+      setChatMessages((prev) => [
+        ...prev,
+        { sender: "bot", text: "⚠️ Error fetching response" },
+      ]);
     }
+  
+    setChatInput("");
   };
 
+  useEffect(()=>{getFileName()},[])
   return (
-    <div className="rag-container">
-      <h2 style={{ textAlign: "center", marginBottom: "20px" }}>NotBookLM</h2>
+   <>
+    {
+      isuploading?("loading.."):(
+        <div className="rag-container">
+     <h1 style={{textAlign:"center"}}>RAG</h1>
 
       {/* Main Content Area */}
       <div className="main-content">
         {/* Left Column - Input Section */}
-        <div className="left-column">
-          <div className="text-input-area">
-            <textarea
-              placeholder="Text Area&#10;user can input&#10;Some text here"
-              value={textInput}
-              onChange={(e) => setTextInput(e.target.value)}
-              rows={8}
-              cols={40}
-            />
-          </div>
+          <div className="left-column">
+            <div className="text-input-area">
+              <textarea
+                placeholder="Text Area&#10;user can input&#10;Some text here"
+                value={textInput}
+                onChange={(e) => setTextInput(e.target.value)}
+                rows={8}
+                cols={40}
+              />
+            </div>
 
-          <button className="submit-btn" onClick={handleSubmit}>
-            Submit
-          </button>
+            <button className="submit-btn" onClick={handleSubmit}>
+              Submit
+            </button>
 
-          <div className="pdf-upload-section">
-            <label htmlFor="pdf-upload" className="pdf-upload-label">
-              Upload PDF
-            </label>
-            <input
-              id="pdf-upload"
-              type="file"
-              accept=".pdf"
-              onChange={handleFileUpload}
-              style={{ display: "none" }}
-            />
+            <div className="pdf-upload-section">
+              <label htmlFor="pdf-upload" className="pdf-upload-label">
+                Upload PDF
+              </label>
+              <input
+                id="pdf-upload"
+                type="file"
+                accept=".pdf"
+                onChange={handleFileUpload}
+              
+              />
+            
+            </div>
+          
           </div>
-        </div>
 
         {/* Middle Column - RAG Chunk */}
-        <div className="middle-column">
+        {/* <div className="middle-column">
           <div className="rag-chunk-area">
             <h2>RAG CHUNK</h2>
             <div className="chunk-content">
-              {/* RAG chunk content will be displayed here */}
-              <p>Retrieved chunks will appear here...</p>
-            </div>
+  {ragChunks.length > 0 ? (
+    ragChunks.map((chunk, idx) => (
+      <div key={idx} className="rag-chunk">
+        <strong>Refernce {idx + 1}:</strong>
+        <p>{chunk.text}</p>
+      </div>
+    ))
+  ) : (
+    <p>Retrieved chunks will appear here...</p>
+  )}
+</div>
           </div>
-        </div>
+        </div> */}
 
         {/* Right Column - Chat Interface */}
+     
         <div className="right-column">
+        <label htmlFor="filename"> Select file
+        <select
+  name="filename"
+  value={selectedFile}
+  onChange={(e) => setSelectedFile(e.target.value)}
+>
+  <option value="">-- Select a file --</option>
+  {Allfiles?.map((filename) => (
+    <option key={filename} value={filename}>
+      {filename.replace(".pdf", "")}
+    </option>
+  ))}
+</select>
+</label>
           <div className="chat-section">
             <h3>User Chat with RAG</h3>
             <div className="chat-messages">
@@ -120,5 +221,10 @@ export default function Rag() {
         </div>
       </div>
     </div>
+      )
+    }
+   
+   
+    </>
   );
 }
