@@ -9,17 +9,21 @@ export default function Rag() {
   const [Allfiles, setAllFiles] = useState([]);
   const [selectedFile, setSelectedFile] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const [Typing, setTyping] = useState(false);
   //const [ragChunks, setRagChunks] = useState([]);
 
   const formData = new FormData();
 
   const handleSubmit = async () => {
     try {
-      const res = await fetch("https://notebooklm-642n.onrender.com/api/textInput", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ textInput }),
-      });
+      const res = await fetch(
+        "https://notebooklm-642n.onrender.com/api/textInput",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ textInput }),
+        }
+      );
       if (res.status === 200) {
         alert("Data Added Successfully");
         setTextInput("");
@@ -39,10 +43,13 @@ export default function Rag() {
       formData.append("file", file);
       formData.append("filename", file.name);
 
-      const res = await fetch("https://notebooklm-642n.onrender.com/api/pdfInput", {
-        method: "POST",
-        body: formData,
-      });
+      const res = await fetch(
+        "https://notebooklm-642n.onrender.com/api/pdfInput",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
       if (res.status === 200) {
         await res.json();
@@ -58,7 +65,9 @@ export default function Rag() {
 
   const getFileName = async () => {
     try {
-      const res = await fetch("https://notebooklm-642n.onrender.com/api/collections");
+      const res = await fetch(
+        "https://notebooklm-642n.onrender.com/api/collections"
+      );
       const data = await res.json();
       setAllFiles(data.collections);
     } catch (e) {
@@ -68,7 +77,7 @@ export default function Rag() {
 
   const handleChatSubmit = async () => {
     if (!chatInput.trim() || !selectedFile) return;
-
+    setTyping(true);
     //setRagChunks([]);
     const newMessage = { sender: "user", text: chatInput };
     setChatMessages((prev) => [...prev, newMessage]);
@@ -84,7 +93,6 @@ export default function Rag() {
       });
 
       const data = await res.json();
-      setRagChunks(data.chunks || []);
 
       const botMessage = { sender: "bot", text: data.answer };
       setChatMessages((prev) => [...prev, botMessage]);
@@ -94,6 +102,8 @@ export default function Rag() {
         ...prev,
         { sender: "bot", text: "⚠️ Error fetching response" },
       ]);
+    } finally {
+      setTyping(false);
     }
 
     //setChatInput(""); // clear input
@@ -107,11 +117,12 @@ export default function Rag() {
     <div className="rag-container">
       <h1 style={{ textAlign: "center" }}>RAG – Upload only PDF files</h1>
 
-     
-        <div className="main-content">
-          {/* Left Column */}
-          {isUploading?"Documents Uploading...!":(
-            <div className="left-column">
+      <div className="main-content">
+        {/* Left Column */}
+        {isUploading ? (
+          "Documents Uploading...!"
+        ) : (
+          <div className="left-column">
             <textarea
               placeholder="Type some text..."
               value={textInput}
@@ -142,49 +153,52 @@ export default function Rag() {
               />
             </div>
           </div>
-          )}
-          
+        )}
 
-          {/* Right Column - Chat */}
-          <div className="right-column">
-            <label>
-              Select File:
-              <select
-                name="filename"
-                value={selectedFile}
-                onChange={(e) => {setSelectedFile(e.target.value)
-                setChatMessages([])}
-                }
-              >
-                <option value="">-- Select a file --</option>
-                {Allfiles?.map((filename) => (
-                  <option key={filename} value={filename}>
-                    {filename.replace(".pdf", "")}
-                  </option>
-                ))}
-              </select>
-            </label>
+        {/* Right Column - Chat */}
+        <div className="right-column">
+          <label>
+            Select File:
+            <select
+              name="filename"
+              value={selectedFile}
+              onChange={(e) => {
+                setSelectedFile(e.target.value);
+                setChatMessages([]);
+              }}
+            >
+              <option value="">-- Select a file --</option>
+              {Allfiles?.map((filename) => (
+                <option key={filename} value={filename}>
+                  {filename.replace(".pdf", "")}
+                </option>
+              ))}
+            </select>
+          </label>
 
-            <div className="chat-section">
-              <h3>User Chat with RAG</h3>
-              <div className="chat-messages">
-                {chatMessages.map((message, index) => (
+          <div className="chat-section">
+            <h3>User Chat with RAG</h3>
+            <div className="chat-messages">
+              {chatMessages.map((message, index) => (
+                <div key={index} className={`message ${message.sender}`}>
+                  <strong>{message.sender === "user" ? "You" : "Bot"}:</strong>
                   <div
-                    key={index}
-                    className={`message ${message.sender}`}
-                  >
-                    <strong>
-                      {message.sender === "user" ? "You" : "Bot"}:
-                    </strong>
-                    <div
-                      dangerouslySetInnerHTML={{
-                        __html: marked(message.text || ""),
-                      }}
-                    />
-                  </div>
-                ))}
-              </div>
-{selectedFile.length>0?(<div className="chat-input-container">
+                    dangerouslySetInnerHTML={{
+                      __html: marked(message.text || ""),
+                    }}
+                  />
+                </div>
+              ))}
+
+              {/* 👉 Bot typing indicator */}
+              {Typing && (
+                <div className="message bot">
+                  <em>Bot is typing...</em>
+                </div>
+              )}
+            </div>
+            {selectedFile.length > 0 ? (
+              <div className="chat-input-container">
                 <input
                   type="text"
                   placeholder="Type your message..."
@@ -201,12 +215,13 @@ export default function Rag() {
                 >
                   Send
                 </button>
-              </div>):(<p>Please select the file before start the converation</p>)}
-              
-            </div>
+              </div>
+            ) : (
+              <p>Please select the file before start the converation</p>
+            )}
           </div>
         </div>
-    
+      </div>
     </div>
   );
 }
