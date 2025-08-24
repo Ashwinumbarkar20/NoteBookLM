@@ -223,3 +223,114 @@ export const listCollections = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch collections" });
   }
 };
+
+export const uploadNewCourseVTT = async (req, res) => {
+  try {
+    const { courseName } = req.body;
+    const files = req.files; // multiple VTTs
+
+    if (!courseName || !files?.length) {
+      return res.status(400).json({ error: "Course name and files are required" });
+    }
+
+    const collectionName = "courses"; // 🔑 one big collection for all courses
+
+    // Ensure collection exists
+    await qdrant
+      .createCollection(collectionName, {
+        vectors: { size: 1536, distance: "Cosine" },
+      })
+      .catch(() => console.log("ℹ️ Collection already exists"));
+
+    for (const file of files) {
+      const content = fs.readFileSync(file.path, "utf-8");
+      fs.unlinkSync(file.path); // cleanup local file
+
+      const doc = new Document({
+        pageContent: content,
+        metadata: { courseName, fileName: file.originalname },
+      });
+
+      // Chunk VTT file
+      const splitter = new RecursiveCharacterTextSplitter({
+        chunkSize: 500,
+        chunkOverlap: 50,
+      });
+      const docs = await splitter.splitDocuments([doc]);
+
+      // Store each chunk
+      for (const d of docs) {
+        const vector = await embeddings.embedQuery(d.pageContent);
+        await qdrant.upsert(collectionName, {
+          points: [
+            {
+              id: uuidv4(),
+              vector,
+              payload: {
+                courseName,
+                fileName: file.originalname,
+                text: d.pageContent,
+              },
+            },
+          ],
+        });
+      }
+    }
+
+    res.status(200).json({ message: `✅ Course '${courseName}' VTTs stored in Qdrant` });
+  } catch (err) {
+    console.error("❌ Error in uploadNewCourseVTT:", err);
+    res.status(500).json({ error: "Failed to upload new course" });
+  }
+};
+
+export const uploadExistingCourseVTT = async (req, res) => {
+  try {
+    const { courseName } = req.body;
+    const files = req.files;
+
+    if (!courseName || !files?.length) {
+      return res.status(400).json({ error: "Course name and files are required" });
+    }
+
+    const collectionName = "courses";
+
+    for (const file of files) {
+      const content = fs.readFileSync(file.path, "utf-8");
+      fs.unlinkSync(file.path);
+
+      const doc = new Document({
+        pageContent: content,
+        metadata: { courseName, fileName: file.originalname },
+      });
+
+      const splitter = new RecursiveCharacterTextSplitter({
+        chunkSize: 500,
+        chunkOverlap: 50,
+      });
+      const docs = await splitter.splitDocuments([doc]);
+
+      for (const d of docs) {
+        const vector = await embeddings.embedQuery(d.pageContent);
+        await qdrant.upsert(collectionName, {
+          points: [
+            {
+              id: uuidv4(),
+              vector,
+              payload: {
+                courseName,
+                fileName: file.originalname,
+                text: d.pageContent,
+              },
+            },
+          ],
+        });
+      }
+    }
+
+    res.status(200).json({ message: `✅ New VTTs added to course '${courseName}'` });
+  } catch (err) {
+    console.error("❌ Error in uploadExistingCourseVTT:", err);
+    res.status(500).json({ error: "Failed to upload VTTs to existing course" });
+  }
+};
